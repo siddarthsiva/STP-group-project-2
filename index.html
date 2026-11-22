@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spatial Audio Layout Configurator</title>
+  <link rel="stylesheet" href="./styles/style.css">
+
+  <!-- React 18, ReactDOM, and Babel (CDN - no installation needed) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Math & Placement Engine -->
+  <script src="./src/data/layoutData.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React Code -->
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Component 1: Header
+    function Header({ layoutNotation }) {
+      return (
+        <header className="page-header">
+          <div className="header-content">
+            <h1>Spatial Audio Layout Configurator</h1>
+            <p>Calculate speaker placements and angles for your home theater</p>
+          </div>
+          <div className="layout-badge">
+            <span>Current Layout</span>
+            <h2>{layoutNotation}</h2>
+          </div>
+        </header>
+      );
+    }
+
+    // Component 2: InputPanel
+    function InputPanel({ room, onRoomChange, settings, onSettingsChange }) {
+      function handleDimension(field, value) {
+        let num = parseInt(value, 10);
+        if (!isNaN(num) && num > 0) {
+          onRoomChange({
+            ...room,
+            [field]: num
+          });
+        }
+      }
+
+      function handleSetting(field, value) {
+        onSettingsChange({
+          ...settings,
+          [field]: value
+        });
+      }
+
+      return (
+        <div className="input-panel">
+          <h2>Room & Speaker Settings</h2>
+          <div className="bubble-grid">
+            {/* Bubble 1: Room Dimensions */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>1. Room Dimensions</h3>
+                <span className="unit-badge">Centimeters (cm)</span>
+              </div>
+              <div className="field-group">
+                <label>Length (cm):</label>
+                <input
+                  type="number"
+                  min="200"
+                  max="2000"
+                  step="10"
+                  value={room.length}
+                  onChange={(e) => handleDimension("length", e.target.value)}
+                />
+              </div>
+              <div className="field-group">
+                <label>Width (cm):</label>
+                <input
+                  type="number"
+                  min="200"
+                  max="2000"
+                  step="10"
+                  value={room.width}
+                  onChange={(e) => handleDimension("width", e.target.value)}
+                />
+              </div>
+              <div className="field-group">
+                <label>Height (cm):</label>
+                <input
+                  type="number"
+                  min="180"
+                  max="800"
+                  step="5"
+                  value={room.height}
+                  onChange={(e) => handleDimension("height", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Bubble 2: Front Channels */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>2. Front Channels</h3>
+              </div>
+              <div className="field-group">
+                <label>Include Front Left & Right:</label>
+                <select
+                  value={settings.frontChannels ? "yes" : "no"}
+                  onChange={(e) => handleSetting("frontChannels", e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (Included)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bubble 3: Center Channel */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>3. Center Channel</h3>
+              </div>
+              <div className="field-group">
+                <label>Include Center Channel:</label>
+                <select
+                  value={settings.centerChannel ? "yes" : "no"}
+                  onChange={(e) => handleSetting("centerChannel", e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (Included)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bubble 4: Subwoofer */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>4. Subwoofer (Bass)</h3>
+              </div>
+              <div className="field-group">
+                <label>Number of Subwoofers:</label>
+                <select
+                  value={settings.subwooferCount}
+                  onChange={(e) => handleSetting("subwooferCount", parseInt(e.target.value, 10))}
+                >
+                  <option value="0">0 (None)</option>
+                  <option value="1">1 Subwoofer</option>
+                  <option value="2">2 Subwoofers</option>
+                  <option value="4">4 Subwoofers</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bubble 5: Side Speakers */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>5. Side Speakers</h3>
+              </div>
+              <div className="field-group">
+                <label>Include Side Surrounds:</label>
+                <select
+                  value={settings.sideSpeakers ? "yes" : "no"}
+                  onChange={(e) => handleSetting("sideSpeakers", e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (Included)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              {settings.sideSpeakers && (
+                <div className="field-group">
+                  <label>Mounting Location:</label>
+                  <select
+                    value={settings.sideMount}
+                    onChange={(e) => handleSetting("sideMount", e.target.value)}
+                  >
+                    <option value="ear">At Ear Level (Stands)</option>
+                    <option value="wall">Mounted on the Wall</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Bubble 6: Rear Speakers */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>6. Rear Speakers</h3>
+              </div>
+              <div className="field-group">
+                <label>Include Rear Surrounds:</label>
+                <select
+                  value={settings.rearSpeakers ? "yes" : "no"}
+                  onChange={(e) => handleSetting("rearSpeakers", e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (Included)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              {settings.rearSpeakers && (
+                <div className="field-group">
+                  <label>Mounting Location:</label>
+                  <select
+                    value={settings.rearMount}
+                    onChange={(e) => handleSetting("rearMount", e.target.value)}
+                  >
+                    <option value="ear">At Ear Level (Stands)</option>
+                    <option value="wall">Mounted on the Wall</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Bubble 7: Ceiling Speakers */}
+            <div className="bubble-card">
+              <div className="bubble-header">
+                <h3>7. Ceiling Speakers (Dolby Atmos)</h3>
+              </div>
+              <div className="field-group">
+                <label>Include Ceiling Speakers:</label>
+                <select
+                  value={settings.ceilingSpeakers ? "yes" : "no"}
+                  onChange={(e) => handleSetting("ceilingSpeakers", e.target.value === "yes")}
+                >
+                  <option value="yes">Yes (Included)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              {settings.ceilingSpeakers && (
+                <>
+                  <div className="field-group">
+                    <label>Speaker Quantity:</label>
+                    <select
+                      value={settings.ceilingCount}
+                      onChange={(e) => handleSetting("ceilingCount", parseInt(e.target.value, 10))}
+                    >
+                      <option value="2">2 Speakers (Front Heights)</option>
+                      <option value="4">4 Speakers (Front & Rear Heights)</option>
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label>Mounting Type:</label>
+                    <select
+                      value={settings.ceilingType}
+                      onChange={(e) => handleSetting("ceilingType", e.target.value)}
+                    >
+                      <option value="ceiling">Ceiling Mounted</option>
+                      <option value="upward">Upward Firing</option>
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Component 3: BlueprintTable
+    function BlueprintTable({ activeSpeakers, room, settings }) {
+      if (activeSpeakers.length === 0) {
+        return (
+          <div className="blueprint-section">
+            <h2>Speaker Placement Blueprint</h2>
+            <p className="empty-message">No speakers selected. Please choose your speakers above to see the blueprint.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="blueprint-section">
+          <div className="blueprint-header">
+            <h2>Speaker Placement Blueprint</h2>
+            <span className="room-info">
+              Room Size: {room.length} cm (L) × {room.width} cm (W) × {room.height} cm (H) | Seated Ear Level: 110 cm
+            </span>
+          </div>
+
+          <div className="table-container">
+            <table className="blueprint-table">
+              <thead>
+                <tr>
+                  <th>Speaker Channel</th>
+                  <th>Mounting Style</th>
+                  <th>Distance from Front Wall</th>
+                  <th>Distance from Side Wall</th>
+                  <th>Mounting Height</th>
+                  <th>Horizontal Angle</th>
+                  <th>Vertical Angle</th>
+                  <th>Distance to Listener</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeSpeakers.map((speaker) => {
+                  const data = window.calculate_speaker_position(speaker, room, settings);
+
+                  return (
+                    <tr key={speaker.id} className={`row-${speaker.type}`}>
+                      <td>
+                        <span className={`channel-badge badge-${speaker.type}`}>{speaker.id}</span>
+                        <strong>{speaker.name}</strong>
+                      </td>
+                      <td>{data.mountingStyle}</td>
+                      <td>{data.fromFrontWall} cm</td>
+                      <td>{data.fromSideWall} cm</td>
+                      <td>{data.mountingHeight} cm</td>
+                      <td><span className="angle-tag">{data.horizontalAngle}</span></td>
+                      <td><span className="angle-tag">{data.verticalAngle}</span></td>
+                      <td><strong>{data.distanceToListener} cm</strong></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // Root App Component (Written by Person 2)
+    function App( ){
+      const [room, setRoom] = useState({
+        length: 500,
+        width: 400,
+        height: 270
+      });
+
+      const [settings, setSettings] = useState({
+        frontChannels: true,
+        centerChannel: true,
+        subwooferCount: 1,
+        sideSpeakers: true,
+        sideMount: "wall",
+        rearSpeakers: false,
+        rearMount: "ear",
+        ceilingSpeakers: true,
+        ceilingCount: 2,
+        ceilingType: "upward"
+      });
+
+      let ear_level = 0;
+      if ( settings.frontChannels ){
+        ear_level = ear_level + 2;
+      }
+      if ( settings.centerChannel ){
+        ear_level = ear_level + 1;
+      }
+      if ( settings.sideSpeakers ){
+        ear_level = ear_level + 2;
+      }
+      if ( settings.rearSpeakers ){
+        ear_level = ear_level + 2;
+      }
+
+      let sub_count = settings.subwooferCount;
+      let ceiling_count = settings.ceilingSpeakers ? settings.ceilingCount : 0;
+
+      let layout_text = "";
+      if ( ceiling_count > 0 ){
+        layout_text = ear_level + "." + sub_count + "." + ceiling_count;
+      }
+      else {
+        layout_text = ear_level + "." + sub_count;
+      }
+
+      let active_list = [];
+      let all_speakers = window.speaker_list || [];
+
+      for ( let i = 0 ; i < all_speakers.length ; i++ ){
+        let s = all_speakers[i];
+        if ( s.type == "front" && settings.frontChannels ){
+          active_list.push( s );
+        }
+        else if ( s.type == "center" && settings.centerChannel ){
+          active_list.push( s );
+        }
+        else if ( s.type == "subwoofer" ){
+          if ( s.id == "SUB1" && settings.subwooferCount >= 1 ){
+            active_list.push( s );
+          }
+          if ( s.id == "SUB2" && settings.subwooferCount >= 2 ){
+            active_list.push( s );
+          }
+          if ( s.id == "SUB3" && settings.subwooferCount >= 3 ){
+            active_list.push( s );
+          }
+          if ( s.id == "SUB4" && settings.subwooferCount >= 4 ){
+            active_list.push( s );
+          }
+        }
+        else if ( s.type == "side" && settings.sideSpeakers ){
+          active_list.push( s );
+        }
+        else if ( s.type == "rear" && settings.rearSpeakers ){
+          active_list.push( s );
+        }
+        else if ( s.type == "ceiling" && settings.ceilingSpeakers ){
+          if ( (s.id == "TFL" || s.id == "TFR") && settings.ceilingCount >= 2 ){
+            active_list.push( s );
+          }
+          if ( (s.id == "TRL" || s.id == "TRR") && settings.ceilingCount >= 4 ){
+            active_list.push( s );
+          }
+        }
+      }
+
+      return (
+        <div className="container">
+          <Header layoutNotation={layout_text} />
+          
+          <InputPanel
+            room={room}
+            onRoomChange={setRoom}
+            settings={settings}
+            onSettingsChange={setSettings}
+          />
+
+          <BlueprintTable
+            activeSpeakers={active_list}
+            room={room}
+            settings={settings}
+          />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
